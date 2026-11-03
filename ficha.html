@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Ficha de mascota | SmartPet ID</title>
+<style>
+:root{--navy:#16324f;--teal:#14887b;--teal-dark:#0f6f64;--mint:#e6f6f1;--ink:#22333f;--muted:#4f6272;--line:#d9e2e7;--amber:#ffb45b;
+  --serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;font:1.0625rem/1.6 var(--sans);color:var(--ink);background:linear-gradient(160deg,#eef9f6,#fffaf2);min-height:100vh;display:grid;place-items:center;padding:20px}
+.card{width:min(420px,100%);background:#fff;border-radius:26px;padding:16px;box-shadow:0 14px 40px rgba(22,50,79,.12)}
+.foto{height:260px;border-radius:18px;background:linear-gradient(145deg,#d8eee5,#f4cfa5);display:grid;place-items:center;font-size:6.5rem;overflow:hidden}
+.foto img{width:100%;height:100%;object-fit:cover}
+.body{padding:18px 8px 8px}
+.badge{display:inline-block;font-weight:700;font-size:.85rem;padding:4px 12px;border-radius:999px;background:var(--mint);color:var(--teal-dark)}
+.badge.lost{background:#ffe1c2;color:#8a3d03}
+h1{font:700 2rem var(--serif);color:var(--navy);margin:10px 0 2px}
+.frase{color:var(--muted);margin:0 0 14px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0 0 18px}
+dt{font-weight:700;color:var(--navy)} dd{margin:0;color:var(--muted)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;cursor:pointer;padding:14px 20px;border-radius:999px;font:700 1rem var(--sans);text-decoration:none;margin-top:10px}
+.p{background:var(--teal);color:#fff} .p:hover{background:var(--teal-dark)}
+.s{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.a{background:var(--amber);color:#3d2808}
+.priv{font-size:.9rem;color:var(--muted);text-align:center;margin-top:16px}
+.err{text-align:center;padding:30px 16px;color:var(--muted)}
+:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+</style>
+</head>
+<body>
+<main class="card" id="app" aria-live="polite"></main>
+
+<script>
+/* ===== FICHAS =====
+   Una por mascota. La clave es el ID que va en el QR: ficha.html?id=k7x92pq
+   - Usa IDs largos y aleatorios (no 001, 002) para que nadie pueda adivinarlos.
+   - Pon SOLO datos que la familia autorizó publicar: este archivo es público.
+   - tel: con código de país, sin + ni espacios (ej. 56912345678).
+   - perdido: true activa el "modo perdido".
+   - foto: URL de una imagen (puede ser un archivo subido al repositorio, ej. "fotos/max.jpg"). Déjala vacía para usar un emoji. */
+const FICHAS = {
+  "demo-max-4f8a2c": {
+    nombre: "Max", especie: "perro", emoji: "🐕", foto: "",
+    descripcion: "Perro mestizo café, collar azul",
+    frase: "Soy curioso y muy amistoso.",
+    notas: "Le tiene miedo a los fuegos artificiales.",
+    contacto: "Camila (dueña)", tel: "56900000000", perdido: false
+  }
+};
+
+const app = document.getElementById('app');
+const id = new URLSearchParams(location.search).get('id');
+const f = FICHAS[id];
+const esc = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+if(!f){
+  app.innerHTML = `<div class="err"><h1>Ficha no encontrada</h1><p>Revisa que el código QR esté completo. Si encontraste una mascota con placa, llama al teléfono grabado en ella.</p></div>`;
+} else {
+  document.title = f.nombre + ' | SmartPet ID';
+  const foto = f.foto ? `<img src="${esc(f.foto)}" alt="Foto de ${esc(f.nombre)}">` : `<span aria-hidden="true">${esc(f.emoji||'🐾')}</span>`;
+  app.innerHTML = `
+    <div class="foto">${foto}</div>
+    <div class="body">
+      <span class="badge ${f.perdido?'lost':''}">${f.perdido?'🚨 Me estoy buscando':'Perfil activo'}</span>
+      <h1>${esc(f.nombre)}</h1>
+      ${f.frase?`<p class="frase">“${esc(f.frase)}”</p>`:''}
+      <dl>
+        <dt>Especie</dt><dd>${f.especie==='gato'?'Gato':'Perro'}</dd>
+        ${f.descripcion?`<dt>Cómo soy</dt><dd>${esc(f.descripcion)}</dd>`:''}
+        ${f.notas?`<dt>Importante</dt><dd>${esc(f.notas)}</dd>`:''}
+        ${f.contacto?`<dt>Familia</dt><dd>${esc(f.contacto)}</dd>`:''}
+      </dl>
+      <a class="btn p" href="tel:+${esc(f.tel)}">📞 Llamar a la familia</a>
+      <button class="btn a" id="wa" type="button">💬 Avisar por WhatsApp con mi ubicación</button>
+      <p class="priv">🔒 Solo se muestran los datos que la familia autorizó.</p>
+    </div>`;
+
+  document.getElementById('wa').addEventListener('click',()=>{
+    const abrir = (extra)=>{
+      const msg = `Hola, encontré a ${f.nombre}.` + (extra?` Estoy aquí: ${extra}`:'');
+      window.open(`https://wa.me/${f.tel}?text=${encodeURIComponent(msg)}`,'_blank','noopener');
+    };
+    if(!navigator.geolocation) return abrir('');
+    navigator.geolocation.getCurrentPosition(
+      p=>abrir(`https://maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`),
+      ()=>abrir(''),
+      {timeout:8000}
+    );
+  });
+}
+</script>
+</body>
+</html>
